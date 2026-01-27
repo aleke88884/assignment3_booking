@@ -1,43 +1,43 @@
-1. Project Proposal
+1. ### Project Proposal
 Project Title
 
-SmartBooking — Online Booking Management System
+SmartBooking — Online Booking Management System for small businesses.
 
-Project Relevance
+### Project Relevance
 
-Today, online booking systems are widely used in many domains such as hotel reservations, coworking spaces, meeting rooms, sport facilities, and service appointments. However, many existing solutions are either too complex, expensive, or not flexible enough for small and medium-sized businesses.
+Today, online booking systems are widely used in many domains such as hotel reservations, coworking spaces, meeting rooms, sport facilities, and service appointments. However, many existing solutions are either too complex, expensive, or not flexible enough for small and medium-sized businesses. We can say that in our segment in the Eurasia there is no unique booking system that would work with all medium and small businesses. The same Booking works only in hotels and in different hotels and separately in the apartment rental segment. There are no other known and responsible booking systems.
 
-The goal of SmartBooking is to provide a simple, scalable, and user-friendly booking system that allows users to reserve resources online while giving administrators full control over availability, pricing, and bookings.
+The goal of SmartBooking is to provide a simple, scalable, and user-friendly booking system that allows users to reserve resources online while giving administrators full control over availability, pricing, and bookings. 
 
 This project is relevant because it demonstrates real-world backend design, data modeling, concurrency handling, and modular system architecture using Go.
 
-Target Users
+### Target Users
 
-End Users – people who want to book a resource (room, apartment, service, etc.)
+End Users – people who want to book a resource (room, apartment, service, sauna, football court,spa, swimming pools)
 
-Administrators – users who manage resources, schedules, and bookings
+Administrators – users who manage resources, schedules, and bookings and analize the current status on the bookings, they manage adding and removing new partners.
 
-System Operators – responsible for maintaining the system and monitoring usage
+System Operators – responsible for maintaining the system and monitoring usage, quick call and fast helpers for any problem like in Kaspi.kz Kaspi git.
 
-Competitor Analysis
+### Competitor Analysis
 
 Existing booking platforms include:
 
-Booking.com – powerful but overly complex and expensive
+Booking.com – powerful but overly complex and expensive.
 
-Airbnb – focused only on short-term accommodation
+Airbnb – focused only on short-term accommodation.
 
-Calendly – suitable for time slots but not resource-based booking
+Calendly – suitable for time slots but not resource-based booking.
 
-SmartBooking aims to be:
+### SmartBooking aims to be:
 
-simpler than large platforms
+Simpler than large platforms
 
-customizable for different booking scenarios
+Customizable for different booking scenarios
 
-focused on backend architecture rather than UI complexity
+Focused on easy maintanible service and aimed to our market constrats.
 
-Planned Features (High-Level)
+### Planned Features (High-Level)
 
 User registration and authentication
 
@@ -53,12 +53,12 @@ Basic role-based access (user/admin)
 
 UI workflows and final design decisions will be implemented in later milestones.
 
-2. Architecture & Design
+2. ### Architecture & Design
 System Architecture
 
-The system will follow a monolithic architecture, as required, with clearly separated internal modules.
+The system will follow a monolithic architecture, as required, with clearly separated internal modules. We will make it microservice in the future but now it is suitable for it.
 
-Architecture Style:
+### Architecture Style:
 
 Monolithic backend
 
@@ -66,7 +66,7 @@ REST API
 
 Layered architecture (handlers → services → repositories)
 
-Main Modules
+### Main Modules
 
 Auth Module
 
@@ -100,7 +100,7 @@ Data persistence
 
 Transaction handling
 
-Data Flow Overview
+### Data Flow Overview
 
 Client sends HTTP request
 
@@ -114,13 +114,15 @@ Response returned to client
 
 Use-Case Diagram (Description)
 
-Actors:
+### Actors:
 
 User
 
+System helpers
+
 Admin
 
-Use Cases:
+### Use Cases:
 
 Register / Login
 
