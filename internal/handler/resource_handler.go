@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"smartbooking/internal/models"
 	"smartbooking/internal/service"
@@ -40,6 +41,8 @@ func (h *ResourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Name:        req.Name,
 		Description: req.Description,
 		Capacity:    req.Capacity,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	if err := h.resourceService.Create(r.Context(), resource); err != nil {

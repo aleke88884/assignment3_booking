@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"smartbooking/config"
 	"smartbooking/internal/handler"
@@ -62,6 +64,9 @@ func main() {
 		w.Write([]byte(`{"status": "ok"}`))
 	})
 
+	// Start background worker for statistics tracking (demonstrates concurrency)
+	go startStatisticsWorker(bookingService, resourceService, userService)
+
 	// Start server
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	log.Printf("SmartBooking server starting on %s", addr)
@@ -78,5 +83,35 @@ func main() {
 
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
+	}
+}
+
+// startStatisticsWorker runs in the background and periodically logs system statistics
+// This demonstrates the use of goroutines for concurrent background processing
+func startStatisticsWorker(bookingService service.BookingService, resourceService service.ResourceService, userService service.UserService) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	log.Printf("Background statistics worker started")
+
+	for range ticker.C {
+		ctx := context.Background()
+
+		// Collect statistics
+		bookings, _ := bookingService.ListAll(ctx)
+		resources, _ := resourceService.List(ctx)
+		users, _ := userService.List(ctx)
+
+		// Count active bookings
+		activeBookings := 0
+		for _, booking := range bookings {
+			if booking.Status != "cancelled" {
+				activeBookings++
+			}
+		}
+
+		// Log statistics
+		log.Printf("[STATS] Total Users: %d, Total Resources: %d, Total Bookings: %d, Active Bookings: %d",
+			len(users), len(resources), len(bookings), activeBookings)
 	}
 }

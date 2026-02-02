@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"smartbooking/internal/models"
 	"smartbooking/internal/repository"
 )
@@ -31,15 +33,46 @@ func NewAuthService(userRepo repository.UserRepository) AuthService {
 }
 
 func (s *authService) Register(ctx context.Context, name, email, password string) (*models.User, error) {
-	// TODO: Check if user exists
-	// TODO: Hash password
-	// TODO: Create user
-	return nil, nil
+	// Check if user already exists
+	existingUser, _ := s.userRepo.GetByEmail(ctx, email)
+	if existingUser != nil {
+		return nil, ErrUserExists
+	}
+
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create user
+	user := &models.User{
+		Name:      name,
+		Email:     email,
+		Password:  string(hashedPassword),
+		Role:      models.RoleUser,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := s.userRepo.Create(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (s *authService) Login(ctx context.Context, email, password string) (*models.User, error) {
-	// TODO: Get user by email
-	// TODO: Verify password
-	// TODO: Return user or error
-	return nil, nil
+	// Get user by email
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	// Verify password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	return user, nil
 }
