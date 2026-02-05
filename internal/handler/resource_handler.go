@@ -30,6 +30,16 @@ type CreateResourceRequest struct {
 }
 
 // Create handles POST /resources
+// @Summary Create a new resource
+// @Description Create a new bookable resource (room, apartment, facility)
+// @Tags resources
+// @Accept json
+// @Produce json
+// @Param request body CreateResourceRequest true "Resource details"
+// @Success 201 {object} models.Resource
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 500 {string} string "Internal server error"
+// @Router /resources [post]
 func (h *ResourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req CreateResourceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -56,6 +66,16 @@ func (h *ResourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetByID handles GET /resources/{id}
+// @Summary Get resource by ID
+// @Description Get details of a specific resource
+// @Tags resources
+// @Produce json
+// @Param id path int true "Resource ID"
+// @Success 200 {object} models.Resource
+// @Failure 400 {string} string "Invalid resource ID"
+// @Failure 404 {string} string "Resource not found"
+// @Failure 500 {string} string "Internal server error"
+// @Router /resources/{id} [get]
 func (h *ResourceHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -79,6 +99,13 @@ func (h *ResourceHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 // List handles GET /resources
+// @Summary List all resources
+// @Description Get a list of all available resources
+// @Tags resources
+// @Produce json
+// @Success 200 {array} models.Resource
+// @Failure 500 {string} string "Internal server error"
+// @Router /resources [get]
 func (h *ResourceHandler) List(w http.ResponseWriter, r *http.Request) {
 	resources, err := h.resourceService.List(r.Context())
 	if err != nil {
@@ -91,6 +118,14 @@ func (h *ResourceHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete handles DELETE /resources/{id}
+// @Summary Delete a resource
+// @Description Delete a resource by ID
+// @Tags resources
+// @Param id path int true "Resource ID"
+// @Success 204 "No Content"
+// @Failure 400 {string} string "Invalid resource ID"
+// @Failure 500 {string} string "Internal server error"
+// @Router /resources/{id} [delete]
 func (h *ResourceHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)

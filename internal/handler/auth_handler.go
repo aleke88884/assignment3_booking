@@ -33,6 +33,16 @@ type LoginRequest struct {
 }
 
 // Register handles user registration
+// @Summary Register a new user
+// @Description Create a new user account with name, email, and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body RegisterRequest true "Registration details"
+// @Success 201 {object} models.User
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 500 {string} string "Internal server error"
+// @Router /auth/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -52,6 +62,16 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 // Login handles user login
+// @Summary User login
+// @Description Authenticate user with email and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "Login credentials"
+// @Success 200 {object} models.User
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 401 {string} string "Unauthorized"
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

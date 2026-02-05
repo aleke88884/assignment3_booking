@@ -8,19 +8,52 @@ import (
 	"time"
 
 	"smartbooking/config"
+	"smartbooking/internal/database"
 	"smartbooking/internal/handler"
 	"smartbooking/internal/repository"
 	"smartbooking/internal/service"
+
+	httpSwagger "github.com/swaggo/http-swagger"
 )
+
+// @title SmartBooking API
+// @version 1.0
+// @description Online booking management system for small businesses
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.email support@smartbooking.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api
+// @schemes http
 
 func main() {
 	// Load configuration
 	cfg := config.Load()
 
-	// Initialize repositories
-	userRepo := repository.NewUserRepository()
-	resourceRepo := repository.NewResourceRepository()
-	bookingRepo := repository.NewBookingRepository()
+	// Connect to database
+	db, err := database.New(database.Config{
+		Host:     cfg.Database.Host,
+		Port:     cfg.Database.Port,
+		User:     cfg.Database.User,
+		Password: cfg.Database.Password,
+		DBName:   cfg.Database.DBName,
+	})
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	log.Printf("Connected to PostgreSQL database at %s:%d", cfg.Database.Host, cfg.Database.Port)
+
+	// Initialize repositories with database connection
+	userRepo := repository.NewUserRepository(db.DB)
+	resourceRepo := repository.NewResourceRepository(db.DB)
+	bookingRepo := repository.NewBookingRepository(db.DB)
 
 	// Initialize services
 	authService := service.NewAuthService(userRepo)
@@ -63,6 +96,9 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status": "ok"}`))
 	})
+
+	// Swagger documentation
+	mux.HandleFunc("GET /swagger/", httpSwagger.WrapHandler)
 
 	// Start background worker for statistics tracking (demonstrates concurrency)
 	go startStatisticsWorker(bookingService, resourceService, userService)

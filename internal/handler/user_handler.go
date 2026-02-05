@@ -21,6 +21,16 @@ func NewUserHandler(userService service.UserService) *UserHandler {
 }
 
 // GetByID handles GET /users/{id}
+// @Summary Get user by ID
+// @Description Get details of a specific user
+// @Tags users
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} models.User
+// @Failure 400 {string} string "Invalid user ID"
+// @Failure 404 {string} string "User not found"
+// @Failure 500 {string} string "Internal server error"
+// @Router /users/{id} [get]
 func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -44,6 +54,13 @@ func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 // List handles GET /users
+// @Summary List all users
+// @Description Get a list of all users in the system
+// @Tags users
+// @Produce json
+// @Success 200 {array} models.User
+// @Failure 500 {string} string "Internal server error"
+// @Router /users [get]
 func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 	users, err := h.userService.List(r.Context())
 	if err != nil {

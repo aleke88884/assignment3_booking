@@ -1,0 +1,465 @@
+basePath: /api
+definitions:
+  handler.CreateBookingRequest:
+    properties:
+      end_time:
+        type: string
+      resource_id:
+        type: integer
+      start_time:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  handler.CreateResourceRequest:
+    properties:
+      capacity:
+        type: integer
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  handler.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  handler.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+  models.Booking:
+    properties:
+      created_at:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: integer
+      resource_id:
+        type: integer
+      start_time:
+        type: string
+      status:
+        $ref: '#/definitions/models.BookingStatus'
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.BookingStatus:
+    enum:
+    - pending
+    - confirmed
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - StatusPending
+    - StatusConfirmed
+    - StatusCancelled
+  models.Resource:
+    properties:
+      capacity:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Role:
+    enum:
+    - user
+    - admin
+    type: string
+    x-enum-varnames:
+    - RoleUser
+    - RoleAdmin
+  models.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        $ref: '#/definitions/models.Role'
+      updated_at:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@smartbooking.com
+    name: API Support
+  description: Online booking management system for small businesses
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: SmartBooking API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      summary: User login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with name, email, and password
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Register a new user
+      tags:
+      - auth
+  /bookings:
+    get:
+      description: Get a list of all bookings in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Booking'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List all bookings
+      tags:
+      - bookings
+    post:
+      consumes:
+      - application/json
+      description: Create a new booking for a resource with conflict checking
+      parameters:
+      - description: 'Booking details (use RFC3339 format for times: 2024-01-15T10:00:00Z)'
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Booking'
+        "400":
+          description: Invalid request or booking conflict
+          schema:
+            type: string
+      summary: Create a new booking
+      tags:
+      - bookings
+  /bookings/{id}:
+    get:
+      description: Get details of a specific booking
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Booking'
+        "400":
+          description: Invalid booking ID
+          schema:
+            type: string
+        "404":
+          description: Booking not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get booking by ID
+      tags:
+      - bookings
+  /bookings/{id}/cancel:
+    post:
+      description: Cancel an existing booking by ID
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid booking ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Cancel a booking
+      tags:
+      - bookings
+  /resources:
+    get:
+      description: Get a list of all available resources
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Resource'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List all resources
+      tags:
+      - resources
+    post:
+      consumes:
+      - application/json
+      description: Create a new bookable resource (room, apartment, facility)
+      parameters:
+      - description: Resource details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateResourceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Resource'
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create a new resource
+      tags:
+      - resources
+  /resources/{id}:
+    delete:
+      description: Delete a resource by ID
+      parameters:
+      - description: Resource ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid resource ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete a resource
+      tags:
+      - resources
+    get:
+      description: Get details of a specific resource
+      parameters:
+      - description: Resource ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Resource'
+        "400":
+          description: Invalid resource ID
+          schema:
+            type: string
+        "404":
+          description: Resource not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get resource by ID
+      tags:
+      - resources
+  /users:
+    get:
+      description: Get a list of all users in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List all users
+      tags:
+      - users
+  /users/{id}:
+    get:
+      description: Get details of a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid user ID
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get user by ID
+      tags:
+      - users
+  /users/{id}/bookings:
+    get:
+      description: Get all bookings for a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Booking'
+            type: array
+        "400":
+          description: Invalid user ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List bookings by user
+      tags:
+      - bookings
+schemes:
+- http
+swagger: "2.0"

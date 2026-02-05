@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # PostgreSQL база данных
+  postgres:
+    image: postgres:16-alpine
+    container_name: smartbooking_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-smartbooking}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      # Сохраняем данные базы данных
+      - postgres_data:/var/lib/postgresql/data
+      # Автоматически выполняем миграции при первом запуске
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartbooking_network
+
+  # Go приложение
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartbooking_app
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-smartbooking}
+      SERVER_HOST: ${SERVER_HOST:-0.0.0.0}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smartbooking_network
+
+# Именованный том для хранения данных PostgreSQL
+volumes:
+  postgres_data:
+    driver: local
+
+# Сеть для связи между контейнерами
+networks:
+  smartbooking_network:
+    driver: bridge

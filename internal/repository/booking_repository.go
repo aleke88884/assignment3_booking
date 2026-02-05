@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
-	"sync"
 	"time"
 
 	"smartbooking/internal/models"
@@ -25,122 +25,264 @@ type BookingRepository interface {
 	CheckOverlap(ctx context.Context, resourceID int64, startTime, endTime time.Time) (bool, error)
 }
 
-// bookingRepository implements BookingRepository interface with in-memory storage
+// bookingRepository implements BookingRepository interface with PostgreSQL storage
 type bookingRepository struct {
-	mu       sync.RWMutex
-	bookings map[int64]*models.Booking
-	nextID   int64
+	db *sql.DB
 }
 
 // NewBookingRepository creates a new instance of BookingRepository
-func NewBookingRepository() BookingRepository {
+func NewBookingRepository(db *sql.DB) BookingRepository {
 	return &bookingRepository{
-		bookings: make(map[int64]*models.Booking),
-		nextID:   1,
+		db: db,
 	}
 }
 
 func (r *bookingRepository) Create(ctx context.Context, booking *models.Booking) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	query := `
+		INSERT INTO bookings (user_id, resource_id, start_time, end_time, status, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id
+	`
 
-	// Assign ID and store
-	booking.ID = r.nextID
-	r.nextID++
+	now := time.Now()
+	booking.CreatedAt = now
+	booking.UpdatedAt = now
 
-	r.bookings[booking.ID] = booking
+	err := r.db.QueryRowContext(ctx, query,
+		booking.UserID,
+		booking.ResourceID,
+		booking.StartTime,
+		booking.EndTime,
+		booking.Status,
+		booking.CreatedAt,
+		booking.UpdatedAt,
+	).Scan(&booking.ID)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (r *bookingRepository) GetByID(ctx context.Context, id int64) (*models.Booking, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	query := `
+		SELECT id, user_id, resource_id, start_time, end_time, status, created_at, updated_at
+		FROM bookings
+		WHERE id = $1
+	`
 
-	booking, exists := r.bookings[id]
-	if !exists {
+	booking := &models.Booking{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&booking.ID,
+		&booking.UserID,
+		&booking.ResourceID,
+		&booking.StartTime,
+		&booking.EndTime,
+		&booking.Status,
+		&booking.CreatedAt,
+		&booking.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
 		return nil, ErrBookingNotFound
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return booking, nil
 }
 
 func (r *bookingRepository) Update(ctx context.Context, booking *models.Booking) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	query := `
+		UPDATE bookings
+		SET user_id = $1, resource_id = $2, start_time = $3, end_time = $4, status = $5, updated_at = $6
+		WHERE id = $7
+	`
 
-	if _, exists := r.bookings[booking.ID]; !exists {
+	booking.UpdatedAt = time.Now()
+
+	result, err := r.db.ExecContext(ctx, query,
+		booking.UserID,
+		booking.ResourceID,
+		booking.StartTime,
+		booking.EndTime,
+		booking.Status,
+		booking.UpdatedAt,
+		booking.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
 		return ErrBookingNotFound
 	}
 
-	r.bookings[booking.ID] = booking
 	return nil
 }
 
 func (r *bookingRepository) Delete(ctx context.Context, id int64) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	query := `DELETE FROM bookings WHERE id = $1`
 
-	if _, exists := r.bookings[id]; !exists {
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
 		return ErrBookingNotFound
 	}
 
-	delete(r.bookings, id)
 	return nil
 }
 
 func (r *bookingRepository) ListByUser(ctx context.Context, userID int64) ([]*models.Booking, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	query := `
+		SELECT id, user_id, resource_id, start_time, end_time, status, created_at, updated_at
+		FROM bookings
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
 	bookings := make([]*models.Booking, 0)
-	for _, booking := range r.bookings {
-		if booking.UserID == userID {
-			bookings = append(bookings, booking)
+	for rows.Next() {
+		booking := &models.Booking{}
+		err := rows.Scan(
+			&booking.ID,
+			&booking.UserID,
+			&booking.ResourceID,
+			&booking.StartTime,
+			&booking.EndTime,
+			&booking.Status,
+			&booking.CreatedAt,
+			&booking.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
 		}
+		bookings = append(bookings, booking)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return bookings, nil
 }
 
 func (r *bookingRepository) ListByResource(ctx context.Context, resourceID int64) ([]*models.Booking, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	query := `
+		SELECT id, user_id, resource_id, start_time, end_time, status, created_at, updated_at
+		FROM bookings
+		WHERE resource_id = $1
+		ORDER BY created_at DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, resourceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
 	bookings := make([]*models.Booking, 0)
-	for _, booking := range r.bookings {
-		if booking.ResourceID == resourceID {
-			bookings = append(bookings, booking)
+	for rows.Next() {
+		booking := &models.Booking{}
+		err := rows.Scan(
+			&booking.ID,
+			&booking.UserID,
+			&booking.ResourceID,
+			&booking.StartTime,
+			&booking.EndTime,
+			&booking.Status,
+			&booking.CreatedAt,
+			&booking.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
 		}
+		bookings = append(bookings, booking)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return bookings, nil
 }
 
 func (r *bookingRepository) ListAll(ctx context.Context) ([]*models.Booking, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	query := `
+		SELECT id, user_id, resource_id, start_time, end_time, status, created_at, updated_at
+		FROM bookings
+		ORDER BY created_at DESC
+	`
 
-	bookings := make([]*models.Booking, 0, len(r.bookings))
-	for _, booking := range r.bookings {
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	bookings := make([]*models.Booking, 0)
+	for rows.Next() {
+		booking := &models.Booking{}
+		err := rows.Scan(
+			&booking.ID,
+			&booking.UserID,
+			&booking.ResourceID,
+			&booking.StartTime,
+			&booking.EndTime,
+			&booking.Status,
+			&booking.CreatedAt,
+			&booking.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
 		bookings = append(bookings, booking)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return bookings, nil
 }
 
 func (r *bookingRepository) CheckOverlap(ctx context.Context, resourceID int64, startTime, endTime time.Time) (bool, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	query := `
+		SELECT COUNT(*)
+		FROM bookings
+		WHERE resource_id = $1
+			AND status != 'cancelled'
+			AND start_time < $3
+			AND end_time > $2
+	`
 
-	// Check for overlapping bookings for the same resource
-	// Bookings overlap if: (startTime < existing.EndTime) && (endTime > existing.StartTime)
-	for _, booking := range r.bookings {
-		if booking.ResourceID == resourceID && booking.Status != models.StatusCancelled {
-			if startTime.Before(booking.EndTime) && endTime.After(booking.StartTime) {
-				return true, nil
-			}
-		}
+	var count int
+	err := r.db.QueryRowContext(ctx, query, resourceID, startTime, endTime).Scan(&count)
+	if err != nil {
+		return false, err
 	}
 
-	return false, nil
+	return count > 0, nil
 }

@@ -30,6 +30,15 @@ type CreateBookingRequest struct {
 }
 
 // Create handles POST /bookings
+// @Summary Create a new booking
+// @Description Create a new booking for a resource with conflict checking
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Param request body CreateBookingRequest true "Booking details (use RFC3339 format for times: 2024-01-15T10:00:00Z)"
+// @Success 201 {object} models.Booking
+// @Failure 400 {string} string "Invalid request or booking conflict"
+// @Router /bookings [post]
 func (h *BookingHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req CreateBookingRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -61,6 +70,16 @@ func (h *BookingHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetByID handles GET /bookings/{id}
+// @Summary Get booking by ID
+// @Description Get details of a specific booking
+// @Tags bookings
+// @Produce json
+// @Param id path int true "Booking ID"
+// @Success 200 {object} models.Booking
+// @Failure 400 {string} string "Invalid booking ID"
+// @Failure 404 {string} string "Booking not found"
+// @Failure 500 {string} string "Internal server error"
+// @Router /bookings/{id} [get]
 func (h *BookingHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -84,6 +103,15 @@ func (h *BookingHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 // Cancel handles POST /bookings/{id}/cancel
+// @Summary Cancel a booking
+// @Description Cancel an existing booking by ID
+// @Tags bookings
+// @Produce json
+// @Param id path int true "Booking ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {string} string "Invalid booking ID"
+// @Failure 500 {string} string "Internal server error"
+// @Router /bookings/{id}/cancel [post]
 func (h *BookingHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -102,6 +130,13 @@ func (h *BookingHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListAll handles GET /bookings
+// @Summary List all bookings
+// @Description Get a list of all bookings in the system
+// @Tags bookings
+// @Produce json
+// @Success 200 {array} models.Booking
+// @Failure 500 {string} string "Internal server error"
+// @Router /bookings [get]
 func (h *BookingHandler) ListAll(w http.ResponseWriter, r *http.Request) {
 	bookings, err := h.bookingService.ListAll(r.Context())
 	if err != nil {
@@ -114,6 +149,15 @@ func (h *BookingHandler) ListAll(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListByUser handles GET /users/{id}/bookings
+// @Summary List bookings by user
+// @Description Get all bookings for a specific user
+// @Tags bookings
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {array} models.Booking
+// @Failure 400 {string} string "Invalid user ID"
+// @Failure 500 {string} string "Internal server error"
+// @Router /users/{id}/bookings [get]
 func (h *BookingHandler) ListByUser(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	userID, err := strconv.ParseInt(idStr, 10, 64)

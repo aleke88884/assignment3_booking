@@ -1,5 +1,10 @@
 package config
 
+import (
+	"os"
+	"strconv"
+)
+
 // Config holds application configuration
 type Config struct {
 	Server   ServerConfig
@@ -25,15 +30,37 @@ type DatabaseConfig struct {
 func Load() *Config {
 	return &Config{
 		Server: ServerConfig{
-			Host: "localhost",
-			Port: 8080,
+			Host: getEnv("SERVER_HOST", "0.0.0.0"),
+			Port: getEnvAsInt("SERVER_PORT", 8080),
 		},
 		Database: DatabaseConfig{
-			Host:     "localhost",
-			Port:     5432,
-			User:     "postgres",
-			Password: "postgres",
-			DBName:   "smartbooking",
+			Host:     getEnv("DB_HOST", "localhost"),
+			Port:     getEnvAsInt("DB_PORT", 5432),
+			User:     getEnv("DB_USER", "postgres"),
+			Password: getEnv("DB_PASSWORD", "postgres"),
+			DBName:   getEnv("DB_NAME", "smartbooking"),
 		},
 	}
+}
+
+// getEnv получает значение переменной окружения или возвращает значение по умолчанию
+func getEnv(key string, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
+
+// getEnvAsInt получает целочисленное значение переменной окружения
+func getEnvAsInt(key string, defaultValue int) int {
+	valueStr := os.Getenv(key)
+	if valueStr == "" {
+		return defaultValue
+	}
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return defaultValue
+	}
+	return value
 }

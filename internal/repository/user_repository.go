@@ -2,8 +2,9 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
-	"sync"
+	"time"
 
 	"smartbooking/internal/models"
 )
@@ -22,106 +23,188 @@ type UserRepository interface {
 	List(ctx context.Context) ([]*models.User, error)
 }
 
-// userRepository implements UserRepository interface with in-memory storage
+// userRepository implements UserRepository interface with PostgreSQL storage
 type userRepository struct {
-	mu         sync.RWMutex
-	users      map[int64]*models.User
-	emailIndex map[string]*models.User
-	nextID     int64
+	db *sql.DB
 }
 
 // NewUserRepository creates a new instance of UserRepository
-func NewUserRepository() UserRepository {
+func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{
-		users:      make(map[int64]*models.User),
-		emailIndex: make(map[string]*models.User),
-		nextID:     1,
+		db: db,
 	}
 }
 
 func (r *userRepository) Create(ctx context.Context, user *models.User) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	query := `
+		INSERT INTO users (name, email, password, role, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id
+	`
 
-	// Check if email already exists
-	if _, exists := r.emailIndex[user.Email]; exists {
-		return errors.New("user with this email already exists")
+	now := time.Now()
+	user.CreatedAt = now
+	user.UpdatedAt = now
+
+	err := r.db.QueryRowContext(ctx, query,
+		user.Name,
+		user.Email,
+		user.Password,
+		user.Role,
+		user.CreatedAt,
+		user.UpdatedAt,
+	).Scan(&user.ID)
+
+	if err != nil {
+		return err
 	}
-
-	// Assign ID and store
-	user.ID = r.nextID
-	r.nextID++
-
-	r.users[user.ID] = user
-	r.emailIndex[user.Email] = user
 
 	return nil
 }
 
 func (r *userRepository) GetByID(ctx context.Context, id int64) (*models.User, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	query := `
+		SELECT id, name, email, password, role, created_at, updated_at
+		FROM users
+		WHERE id = $1
+	`
 
-	user, exists := r.users[id]
-	if !exists {
+	user := &models.User{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return user, nil
 }
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	query := `
+		SELECT id, name, email, password, role, created_at, updated_at
+		FROM users
+		WHERE email = $1
+	`
 
-	user, exists := r.emailIndex[email]
-	if !exists {
+	user := &models.User{}
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return user, nil
 }
 
 func (r *userRepository) Update(ctx context.Context, user *models.User) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	query := `
+		UPDATE users
+		SET name = $1, email = $2, password = $3, role = $4, updated_at = $5
+		WHERE id = $6
+	`
 
-	existing, exists := r.users[user.ID]
-	if !exists {
+	user.UpdatedAt = time.Now()
+
+	result, err := r.db.ExecContext(ctx, query,
+		user.Name,
+		user.Email,
+		user.Password,
+		user.Role,
+		user.UpdatedAt,
+		user.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
 		return ErrUserNotFound
 	}
 
-	// Update email index if email changed
-	if existing.Email != user.Email {
-		delete(r.emailIndex, existing.Email)
-		r.emailIndex[user.Email] = user
-	}
-
-	r.users[user.ID] = user
 	return nil
 }
 
 func (r *userRepository) Delete(ctx context.Context, id int64) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	query := `DELETE FROM users WHERE id = $1`
 
-	user, exists := r.users[id]
-	if !exists {
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
 		return ErrUserNotFound
 	}
 
-	delete(r.users, id)
-	delete(r.emailIndex, user.Email)
 	return nil
 }
 
 func (r *userRepository) List(ctx context.Context) ([]*models.User, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	query := `
+		SELECT id, name, email, password, role, created_at, updated_at
+		FROM users
+		ORDER BY created_at DESC
+	`
 
-	users := make([]*models.User, 0, len(r.users))
-	for _, user := range r.users {
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := make([]*models.User, 0)
+	for rows.Next() {
+		user := &models.User{}
+		err := rows.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Email,
+			&user.Password,
+			&user.Role,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
 		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return users, nil

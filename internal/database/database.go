@@ -3,6 +3,9 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log"
+
+	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
 // Config holds database configuration
@@ -21,9 +24,26 @@ type Database struct {
 
 // New creates a new database connection
 func New(cfg Config) (*Database, error) {
-	// TODO: Implement actual database connection
-	// This is a skeleton for future implementation
-	return &Database{}, nil
+	// Строка подключения для PostgreSQL
+	dsn := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName,
+	)
+
+	// Открываем соединение
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
+
+	// Проверяем соединение
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	log.Println("Successfully connected to PostgreSQL database")
+
+	return &Database{DB: db}, nil
 }
 
 // Close closes the database connection
