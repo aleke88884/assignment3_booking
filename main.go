@@ -11,6 +11,8 @@ import (
 	_ "smartbooking/docs"
 	"smartbooking/internal/database"
 	"smartbooking/internal/handler"
+	"smartbooking/internal/logger"
+	"smartbooking/internal/middleware"
 	"smartbooking/internal/repository"
 	"smartbooking/internal/service"
 	"smartbooking/internal/storage"
@@ -35,12 +37,16 @@ func main() {
 	defer db.Close()
 
 	log.Printf("Connected to PostgreSQL database at %s:%d", cfg.Database.Host, cfg.Database.Port)
+	logger.Info("Database connection established successfully")
 
 	// Проверяем схему БД
 	ctx := context.Background()
 	if err := db.VerifySchema(ctx); err != nil {
 		log.Printf("WARNING: Schema verification failed: %v", err)
+		logger.Error("Schema verification failed: %v", err)
 		log.Printf("Убедитесь что миграции выполнены (они должны запуститься автоматически при первом запуске PostgreSQL)")
+	} else {
+		logger.Info("Database schema verified successfully")
 	}
 
 	// Выводим статистику БД
@@ -48,15 +54,19 @@ func main() {
 	if err == nil {
 		log.Printf("БД статистика: Users=%d, Resources=%d, Bookings=%d",
 			stats.UsersCount, stats.ResourcesCount, stats.BookingsCount)
+		logger.Info("Database stats - Users: %d, Resources: %d, Bookings: %d",
+			stats.UsersCount, stats.ResourcesCount, stats.BookingsCount)
 	}
 
 	// Инициализируем storage (S3/MinIO)
 	var storageService storage.StorageService
 	if cfg.Storage.Type == "local" {
 		log.Println("Using local storage")
+		logger.Info("Initializing local storage")
 		storageService = storage.NewLocalStorage("/uploads", "http://localhost:8080/uploads")
 	} else {
 		log.Printf("Connecting to %s storage at %s", cfg.Storage.Type, cfg.Storage.Endpoint)
+		logger.Info("Initializing %s storage at %s", cfg.Storage.Type, cfg.Storage.Endpoint)
 		storageService, err = storage.NewS3Storage(storage.S3Config{
 			Endpoint:        cfg.Storage.Endpoint,
 			AccessKeyID:     cfg.Storage.AccessKeyID,
@@ -67,9 +77,11 @@ func main() {
 			PublicURL:       cfg.Storage.PublicURL,
 		})
 		if err != nil {
+			logger.Error("Failed to initialize storage: %v", err)
 			log.Fatalf("Failed to initialize storage: %v", err)
 		}
 		log.Printf("✓ Storage initialized successfully")
+		logger.Info("Storage initialized successfully")
 	}
 
 	userRepo := repository.NewUserRepository(db.DB)
@@ -78,6 +90,7 @@ func main() {
 	photoRepo := repository.NewPhotoRepository(db.DB)
 	reviewRepo := repository.NewReviewRepository(db.DB)
 	categoryRepo := repository.NewCategoryRepository(db.DB)
+	ownerRepo := repository.NewOwnerRepository(db.DB)
 
 	authService := service.NewAuthService(userRepo)
 	userService := service.NewUserService(userRepo)
@@ -86,6 +99,7 @@ func main() {
 	photoService := service.NewPhotoService(photoRepo, storageService)
 	reviewService := service.NewReviewService(reviewRepo)
 	categoryService := service.NewCategoryService(categoryRepo)
+	ownerService := service.NewOwnerService(ownerRepo)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
@@ -94,6 +108,7 @@ func main() {
 	photoHandler := handler.NewPhotoHandler(photoService)
 	reviewHandler := handler.NewReviewHandler(reviewService)
 	categoryHandler := handler.NewCategoryHandler(categoryService)
+	ownerHandler := handler.NewOwnerHandler(ownerService)
 
 	mux := http.NewServeMux()
 
@@ -149,6 +164,10 @@ func main() {
 	mux.HandleFunc("PUT /api/categories/{id}", categoryHandler.Update)
 	mux.HandleFunc("DELETE /api/categories/{id}", categoryHandler.Delete)
 
+	mux.HandleFunc("GET /api/owners/{id}/resources", ownerHandler.GetOwnerResources)
+	mux.HandleFunc("GET /api/owners/{id}/bookings", ownerHandler.GetOwnerBookings)
+	mux.HandleFunc("GET /api/owners/{id}/statistics", ownerHandler.GetOwnerStatistics)
+
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status": "ok"}`))
@@ -171,13 +190,21 @@ func main() {
 	log.Printf("  POST /api/photos/upload              - Upload photo")
 	log.Printf("  GET  /api/resources/{id}/photos      - Get resource photos")
 	log.Printf("  DELETE /api/photos/{id}              - Delete photo")
+	log.Printf("  GET  /api/owners/{id}/resources      - Get owner's resources")
+	log.Printf("  GET  /api/owners/{id}/bookings       - Get owner's bookings")
+	log.Printf("  GET  /api/owners/{id}/statistics     - Get owner's statistics")
 	log.Printf("  GET  /health                         - Health check")
 	log.Printf("  GET  /swagger/                       - API documentation")
 	if cfg.Storage.Type == "minio" {
 		log.Printf("  MinIO Console: http://localhost:9001 (admin/admin)")
 	}
 
-	if err := http.ListenAndServe(addr, corsMiddleware(mux)); err != nil {
+	// Apply logging middleware
+	handler := middleware.LoggingMiddleware(corsMiddleware(mux))
+
+	logger.Info("SmartBooking server starting on %s", addr)
+	if err := http.ListenAndServe(addr, handler); err != nil {
+		logger.Error("Server failed to start: %v", err)
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }

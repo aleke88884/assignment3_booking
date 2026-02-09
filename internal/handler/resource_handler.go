@@ -21,9 +21,10 @@ func NewResourceHandler(resourceService service.ResourceService) *ResourceHandle
 }
 
 type CreateResourceRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Capacity    int    `json:"capacity"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Capacity    int     `json:"capacity"`
+	OwnerID     *int64  `json:"owner_id"`
 }
 
 // Create handles POST /resources
@@ -48,6 +49,7 @@ func (h *ResourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Name:        req.Name,
 		Description: req.Description,
 		Capacity:    req.Capacity,
+		OwnerID:     req.OwnerID,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}

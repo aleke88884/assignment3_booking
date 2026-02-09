@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:8080/api';
+const API_URL = window.location.port === '80' || window.location.port === ''
+    ? '/api'
+    : 'http://localhost:8080/api';
 
 function getToken() {
     return localStorage.getItem('token');
@@ -40,17 +42,18 @@ async function register(name, email, password) {
             body: JSON.stringify({name, email, password})
         });
 
-        const data = await response.json();
-
         if (response.ok) {
+            const data = await response.json();
             setUser(data);
             setToken(data.id.toString());
             alert('Регистрация успешна!');
             window.location.href = 'index.html';
         } else {
-            document.getElementById('register-error').textContent = data.error || 'Ошибка регистрации';
+            const errorText = await response.text();
+            document.getElementById('register-error').textContent = errorText || 'Ошибка регистрации';
         }
     } catch (error) {
+        console.error('Registration error:', error);
         document.getElementById('register-error').textContent = 'Ошибка соединения с сервером';
     }
 }
@@ -63,17 +66,18 @@ async function login(email, password) {
             body: JSON.stringify({email, password})
         });
 
-        const data = await response.json();
-
         if (response.ok) {
+            const data = await response.json();
             setUser(data);
             setToken(data.id.toString());
             alert('Вход выполнен успешно!');
             window.location.href = 'index.html';
         } else {
-            document.getElementById('login-error').textContent = data.error || 'Неверный email или пароль';
+            const errorText = await response.text();
+            document.getElementById('login-error').textContent = errorText || 'Неверный email или пароль';
         }
     } catch (error) {
+        console.error('Login error:', error);
         document.getElementById('login-error').textContent = 'Ошибка соединения с сервером';
     }
 }
@@ -168,6 +172,11 @@ async function createBooking() {
     const endTime = document.getElementById('end-time').value;
     const notes = document.getElementById('notes').value;
 
+    if (!startTime || !endTime) {
+        document.getElementById('booking-error').textContent = 'Пожалуйста, укажите время начала и окончания';
+        return;
+    }
+
     try {
         const response = await fetch(API_URL + '/bookings', {
             method: 'POST',
@@ -189,10 +198,11 @@ async function createBooking() {
             closeBookingModal();
             window.location.href = 'bookings.html';
         } else {
-            const data = await response.json();
-            document.getElementById('booking-error').textContent = data.error || 'Ошибка создания бронирования';
+            const errorText = await response.text();
+            document.getElementById('booking-error').textContent = errorText || 'Ошибка создания бронирования';
         }
     } catch (error) {
+        console.error('Booking error:', error);
         document.getElementById('booking-error').textContent = 'Ошибка соединения с сервером';
     }
 }

@@ -19,6 +19,13 @@ type Booking struct {
 	StartTime  time.Time     `json:"start_time"`
 	EndTime    time.Time     `json:"end_time"`
 	Status     BookingStatus `json:"status"`
+	TotalPrice float64       `json:"total_price,omitempty"`
+	Notes      string        `json:"notes,omitempty"`
 	CreatedAt  time.Time     `json:"created_at"`
 	UpdatedAt  time.Time     `json:"updated_at"`
+
+	// For JOIN queries
+	UserName     string `json:"user_name,omitempty"`
+	UserEmail    string `json:"user_email,omitempty"`
+	ResourceName string `json:"resource_name,omitempty"`
 }

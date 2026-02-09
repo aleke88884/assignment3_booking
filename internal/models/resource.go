@@ -11,6 +11,7 @@ type Resource struct {
 	Name         string           `json:"name"`
 	Description  string           `json:"description"`
 	Capacity     int              `json:"capacity"`
+	OwnerID      *int64           `json:"owner_id,omitempty"`
 	CategoryID   *int64           `json:"category_id,omitempty"`
 	Address      string           `json:"address,omitempty"`
 	City         string           `json:"city,omitempty"`
@@ -25,6 +26,7 @@ type Resource struct {
 
 	// Для JOIN запросов
 	CategoryName string            `json:"category_name,omitempty"`
+	OwnerName    string            `json:"owner_name,omitempty"`
 	Photos       []ResourcePhoto   `json:"photos,omitempty"`
 	Rating       float64           `json:"rating,omitempty"`
 	ReviewsCount int               `json:"reviews_count,omitempty"`
@@ -35,6 +37,7 @@ type ResourceCreateRequest struct {
 	Name         string    `json:"name"`
 	Description  string    `json:"description"`
 	Capacity     int       `json:"capacity"`
+	OwnerID      *int64    `json:"owner_id"`
 	CategoryID   *int64    `json:"category_id"`
 	Address      string    `json:"address"`
 	City         string    `json:"city"`
