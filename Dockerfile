@@ -12,8 +12,14 @@ COPY go.mod go.sum ./
 # Загружаем зависимости
 RUN go mod download
 
+# Устанавливаем swag для генерации документации
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
 # Копируем весь исходный код
 COPY . .
+
+# Генерируем Swagger документацию
+RUN swag init
 
 # Собираем приложение
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o smartbooking .

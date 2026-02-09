@@ -13,7 +13,6 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 )
 
-// UserRepository defines the interface for user data operations
 type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	GetByID(ctx context.Context, id int64) (*models.User, error)
@@ -23,12 +22,10 @@ type UserRepository interface {
 	List(ctx context.Context) ([]*models.User, error)
 }
 
-// userRepository implements UserRepository interface with PostgreSQL storage
 type userRepository struct {
 	db *sql.DB
 }
 
-// NewUserRepository creates a new instance of UserRepository
 func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{
 		db: db,

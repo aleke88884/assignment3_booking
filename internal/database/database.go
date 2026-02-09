@@ -30,13 +30,11 @@ func New(cfg Config) (*Database, error) {
 		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName,
 	)
 
-	// Открываем соединение
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Проверяем соединение
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}

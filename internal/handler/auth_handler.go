@@ -7,26 +7,22 @@ import (
 	"smartbooking/internal/service"
 )
 
-// AuthHandler handles authentication HTTP requests
 type AuthHandler struct {
 	authService service.AuthService
 }
 
-// NewAuthHandler creates a new AuthHandler instance
 func NewAuthHandler(authService service.AuthService) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 	}
 }
 
-// RegisterRequest represents the registration request body
 type RegisterRequest struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-// LoginRequest represents the login request body
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`

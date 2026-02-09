@@ -21,9 +21,9 @@ build:
 up:
 	docker-compose up -d
 	@echo "✅ Сервисы запущены!"
-	@echo "📊 Приложение доступно на http://localhost:8080"
-	@echo "📚 Swagger документация: http://localhost:8080/swagger/"
-	@echo "🗄️  PostgreSQL доступен на localhost:5432"
+	@echo " Приложение доступно на http://localhost:8080"
+	@echo " Swagger документация: http://localhost:8080/swagger/"
+	@echo " PostgreSQL доступен на localhost:5432"
 
 # Остановить все сервисы
 down:

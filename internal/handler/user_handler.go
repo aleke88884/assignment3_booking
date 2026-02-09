@@ -8,12 +8,10 @@ import (
 	"smartbooking/internal/service"
 )
 
-// UserHandler handles user-related HTTP requests
 type UserHandler struct {
 	userService service.UserService
 }
 
-// NewUserHandler creates a new UserHandler instance
 func NewUserHandler(userService service.UserService) *UserHandler {
 	return &UserHandler{
 		userService: userService,

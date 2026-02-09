@@ -10,19 +10,16 @@ import (
 	"smartbooking/internal/service"
 )
 
-// ResourceHandler handles resource-related HTTP requests
 type ResourceHandler struct {
 	resourceService service.ResourceService
 }
 
-// NewResourceHandler creates a new ResourceHandler instance
 func NewResourceHandler(resourceService service.ResourceService) *ResourceHandler {
 	return &ResourceHandler{
 		resourceService: resourceService,
 	}
 }
 
-// CreateResourceRequest represents the create resource request body
 type CreateResourceRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`

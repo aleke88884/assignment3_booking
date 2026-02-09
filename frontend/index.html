@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartBooking - Система бронирования</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">SmartBooking</div>
+            <div class="nav-links">
+                <a href="index.html" class="active">Главная</a>
+                <a href="resources.html">Ресурсы</a>
+                <a href="bookings.html" id="bookings-link" style="display:none;">Мои брони</a>
+                <a href="auth.html" id="auth-link">Войти</a>
+                <a href="#" id="profile-link" style="display:none;">
+                    <span id="user-name"></span>
+                </a>
+                <a href="#" id="logout-link" style="display:none;">Выйти</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1>Найдите и забронируйте идеальное место</h1>
+            <p>Бани, бассейны, спортивные площадки, конференц-залы и многое другое</p>
+            <a href="resources.html" class="btn btn-primary">Посмотреть ресурсы</a>
+        </div>
+    </header>
+
+    <section class="categories">
+        <div class="container">
+            <h2>Категории</h2>
+            <div id="categories-grid" class="grid"></div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2>Почему выбирают нас</h2>
+            <div class="grid">
+                <div class="feature">
+                    <div class="icon">🔒</div>
+                    <h3>Безопасно</h3>
+                    <p>Ваши данные защищены</p>
+                </div>
+                <div class="feature">
+                    <div class="icon">⚡</div>
+                    <h3>Быстро</h3>
+                    <p>Бронирование за минуту</p>
+                </div>
+                <div class="feature">
+                    <div class="icon">💰</div>
+                    <h3>Выгодно</h3>
+                    <p>Лучшие цены на рынке</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 SmartBooking. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Загрузка категорий
+        loadCategories();
+    </script>
+</body>
+</html>

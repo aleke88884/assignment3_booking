@@ -9,19 +9,16 @@ import (
 	"smartbooking/internal/service"
 )
 
-// BookingHandler handles booking-related HTTP requests
 type BookingHandler struct {
 	bookingService service.BookingService
 }
 
-// NewBookingHandler creates a new BookingHandler instance
 func NewBookingHandler(bookingService service.BookingService) *BookingHandler {
 	return &BookingHandler{
 		bookingService: bookingService,
 	}
 }
 
-// CreateBookingRequest represents the create booking request body
 type CreateBookingRequest struct {
 	UserID     int64  `json:"user_id"`
 	ResourceID int64  `json:"resource_id"`
