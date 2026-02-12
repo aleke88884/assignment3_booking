@@ -8,73 +8,159 @@ let allBookings = [];
 let allResources = [];
 let allUsers = [];
 let allCategories = [];
-document.addEventListener('DOMContentLoaded', function () {
-    initCharts();
-});
 
-function initCharts() {
-    // 1. Line Chart - Bookings over time
-    const lineCtx = document.getElementById('lineChart').getContext('2d');
-    new Chart(lineCtx, {
-        type: 'line',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Bookings',
-                data: [12, 19, 15, 25, 32, 45, 40],
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                fill: true,
-                tension: 0.4,
-                borderWidth: 3,
-                pointBackgroundColor: '#fff',
-                pointBorderColor: '#667eea',
-                pointRadius: 5
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
+// Chart instances
+let lineChart = null;
+let doughnutChart = null;
+let statusChart = null;
+let revenueChart = null;
+
+async function initCharts() {
+    try {
+        // Fetch all data
+        const [bookingsByDay, resourcesByCategory, bookingsByStatus, revenueByMonth] = await Promise.all([
+            fetch(`${API_BASE_URL}/admin/bookings/by-day?days=7`).then(r => r.json()),
+            fetch(`${API_BASE_URL}/admin/resources/by-category`).then(r => r.json()),
+            fetch(`${API_BASE_URL}/admin/bookings/by-status`).then(r => r.json()),
+            fetch(`${API_BASE_URL}/admin/revenue/by-month?months=6`).then(r => r.json())
+        ]);
+
+        // 1. Line Chart - Bookings over time
+        const lineCtx = document.getElementById('lineChart').getContext('2d');
+        lineChart = new Chart(lineCtx, {
+            type: 'line',
+            data: {
+                labels: bookingsByDay.map(d => d.day),
+                datasets: [{
+                    label: 'Bookings',
+                    data: bookingsByDay.map(d => d.count),
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#667eea',
+                    pointRadius: 5
+                }]
             },
-            scales: {
-                y: { beginAtZero: true, grid: { display: false } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
-
-    // 2. Doughnut Chart - Category distribution
-    const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
-    new Chart(doughnutCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Offices', 'Venues', 'Equipment', 'Cars'],
-            datasets: [{
-                data: [40, 25, 20, 15],
-                backgroundColor: [
-                    '#667eea',
-                    '#48bb78',
-                    '#ed8936',
-                    '#4299e1'
-                ],
-                borderWidth: 0,
-                hoverOffset: 10
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { usePointStyle: true, padding: 20 }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { display: false } },
+                    x: { grid: { display: false } }
                 }
+            }
+        });
+
+        // 2. Doughnut Chart - Category distribution
+        const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+        const colors = ['#667eea', '#48bb78', '#ed8936', '#4299e1', '#9f7aea', '#f56565', '#ecc94b'];
+        doughnutChart = new Chart(doughnutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: resourcesByCategory.map(c => c.category_name),
+                datasets: [{
+                    data: resourcesByCategory.map(c => c.count),
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
             },
-            cutout: '70%'
-        }
-    });
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { usePointStyle: true, padding: 20 }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // 3. Bar Chart - Bookings by status
+        const statusCtx = document.getElementById('bookingStatusChart').getContext('2d');
+        const statusColors = {
+            'confirmed': '#48bb78',
+            'pending': '#ecc94b',
+            'cancelled': '#f56565'
+        };
+        statusChart = new Chart(statusCtx, {
+            type: 'bar',
+            data: {
+                labels: bookingsByStatus.map(b => b.status.charAt(0).toUpperCase() + b.status.slice(1)),
+                datasets: [{
+                    label: 'Bookings',
+                    data: bookingsByStatus.map(b => b.count),
+                    backgroundColor: bookingsByStatus.map(b => statusColors[b.status] || '#667eea'),
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 4. Bar Chart - Revenue by month
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        revenueChart = new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels: revenueByMonth.map(r => r.month),
+                datasets: [{
+                    label: 'Revenue',
+                    data: revenueByMonth.map(r => r.revenue),
+                    backgroundColor: '#48bb78',
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return formatCurrency(context.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { display: false },
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toFixed(0);
+                            }
+                        }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error initializing charts:', error);
+    }
 }
 
 // Simple Tab Switcher
@@ -163,21 +249,21 @@ function switchTab(tabName) {
 // Load Overview
 async function loadOverview() {
     try {
-        const [users, resources, bookings] = await Promise.all([
-            fetch(`${API_BASE_URL}/users`).then(r => r.json()),
-            fetch(`${API_BASE_URL}/resources`).then(r => r.json()),
-            fetch(`${API_BASE_URL}/bookings`).then(r => r.json())
-        ]);
+        // Fetch system statistics
+        const stats = await fetch(`${API_BASE_URL}/admin/statistics`).then(r => r.json());
 
-        const activeBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'pending').length;
-
-        document.getElementById('totalUsers').textContent = users.length;
-        document.getElementById('totalResources').textContent = resources.length;
-        document.getElementById('totalBookings').textContent = bookings.length;
-        document.getElementById('activeBookings').textContent = activeBookings;
+        document.getElementById('totalUsers').textContent = stats.total_users;
+        document.getElementById('totalResources').textContent = stats.total_resources;
+        document.getElementById('totalBookings').textContent = stats.total_bookings;
+        document.getElementById('activeBookings').textContent = stats.active_bookings;
+        document.getElementById('totalRevenue').textContent = formatCurrency(stats.total_revenue);
+        document.getElementById('totalReviews').textContent = stats.total_reviews;
 
         document.getElementById('loadingOverview').style.display = 'none';
         document.getElementById('overviewContent').style.display = 'block';
+
+        // Initialize charts after loading overview
+        await initCharts();
     } catch (error) {
         console.error('Error loading overview:', error);
         document.getElementById('loadingOverview').textContent = 'Failed to load overview';

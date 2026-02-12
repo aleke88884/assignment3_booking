@@ -91,6 +91,7 @@ func main() {
 	reviewRepo := repository.NewReviewRepository(db.DB)
 	categoryRepo := repository.NewCategoryRepository(db.DB)
 	ownerRepo := repository.NewOwnerRepository(db.DB)
+	adminRepo := repository.NewAdminRepository(db.DB)
 
 	authService := service.NewAuthService(userRepo)
 	userService := service.NewUserService(userRepo)
@@ -100,6 +101,7 @@ func main() {
 	reviewService := service.NewReviewService(reviewRepo)
 	categoryService := service.NewCategoryService(categoryRepo)
 	ownerService := service.NewOwnerService(ownerRepo)
+	adminService := service.NewAdminService(adminRepo)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
@@ -109,6 +111,7 @@ func main() {
 	reviewHandler := handler.NewReviewHandler(reviewService)
 	categoryHandler := handler.NewCategoryHandler(categoryService)
 	ownerHandler := handler.NewOwnerHandler(ownerService)
+	adminHandler := handler.NewAdminHandler(adminService)
 
 	mux := http.NewServeMux()
 
@@ -167,6 +170,12 @@ func main() {
 	mux.HandleFunc("GET /api/owners/{id}/resources", ownerHandler.GetOwnerResources)
 	mux.HandleFunc("GET /api/owners/{id}/bookings", ownerHandler.GetOwnerBookings)
 	mux.HandleFunc("GET /api/owners/{id}/statistics", ownerHandler.GetOwnerStatistics)
+
+	mux.HandleFunc("GET /api/admin/statistics", adminHandler.GetSystemStatistics)
+	mux.HandleFunc("GET /api/admin/bookings/by-status", adminHandler.GetBookingsByStatus)
+	mux.HandleFunc("GET /api/admin/resources/by-category", adminHandler.GetResourcesByCategory)
+	mux.HandleFunc("GET /api/admin/revenue/by-month", adminHandler.GetRevenueByMonth)
+	mux.HandleFunc("GET /api/admin/bookings/by-day", adminHandler.GetBookingsByDay)
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

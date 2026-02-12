@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - SmartBooking</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         .admin-container {
             max-width: 1400px;
@@ -231,6 +232,56 @@
             border-bottom: 2px solid #007bff;
             padding-bottom: 10px;
         }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-card h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .stat-card.revenue {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+
+        .stat-card.users {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+        }
+
+        .stat-card.resources {
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+        }
+
+        .stat-card.bookings {
+            background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+        }
+
+        .stat-card.reviews {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+        }
+
+        .stat-card.rating {
+            background: linear-gradient(135deg, #ecc94b 0%, #d69e2e 100%);
+        }
     </style>
 </head>
 <body>
@@ -256,21 +307,56 @@
             <div id="loadingOverview" class="loading">Loading overview...</div>
             <div id="overviewContent" style="display: none;">
                 <div class="stats-grid">
-                    <div class="stat-card">
+                    <div class="stat-card users">
                         <h3>Total Users</h3>
                         <div class="stat-value" id="totalUsers">0</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card resources">
                         <h3>Total Resources</h3>
                         <div class="stat-value" id="totalResources">0</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card bookings">
                         <h3>Total Bookings</h3>
                         <div class="stat-value" id="totalBookings">0</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card bookings">
                         <h3>Active Bookings</h3>
                         <div class="stat-value" id="activeBookings">0</div>
+                    </div>
+                    <div class="stat-card revenue">
+                        <h3>Total Revenue</h3>
+                        <div class="stat-value" id="totalRevenue">$0</div>
+                    </div>
+                    <div class="stat-card reviews">
+                        <h3>Total Reviews</h3>
+                        <div class="stat-value" id="totalReviews">0</div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Bookings Over Time</h3>
+                        <div class="chart-container">
+                            <canvas id="lineChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Resources by Category</h3>
+                        <div class="chart-container">
+                            <canvas id="doughnutChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Bookings by Status</h3>
+                        <div class="chart-container">
+                            <canvas id="bookingStatusChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Revenue by Month</h3>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
