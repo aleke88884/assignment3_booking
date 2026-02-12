@@ -78,8 +78,8 @@ CREATE TABLE IF NOT EXISTS bookings (
     -- Минимальная длительность 15 минут
     CONSTRAINT chk_booking_duration CHECK (end_time - start_time >= INTERVAL '15 minutes'),
 
-    -- Нельзя бронировать в прошлом
-    CONSTRAINT chk_booking_future CHECK (start_time >= CURRENT_TIMESTAMP)
+    -- Нельзя бронировать в прошлом (с буфером 5 минут для учета задержек сети)
+    CONSTRAINT chk_booking_future CHECK (start_time >= CURRENT_TIMESTAMP - INTERVAL '5 minutes')
 );
 
 -- Индексы для оптимизации запросов

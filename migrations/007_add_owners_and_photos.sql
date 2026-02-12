@@ -1,10 +1,10 @@
 -- Add owner users and photos for resources
 
--- Add owner users
+-- Add owner users (Password: password123)
 INSERT INTO users (name, email, password, role) VALUES
-('Владелец Алексей', 'owner1@smartbooking.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'owner'),
-('Владелец Марина', 'owner2@smartbooking.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'owner'),
-('Владелец Дмитрий', 'owner3@smartbooking.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'owner')
+('Владелец Алексей', 'owner1@smartbooking.com', '$2a$10$XVkjArT5QKlksmLDAnahNeRspvJ1lTwMjVGjyfPy5o2oNd2FkiaAC', 'owner'),
+('Владелец Марина', 'owner2@smartbooking.com', '$2a$10$XVkjArT5QKlksmLDAnahNeRspvJ1lTwMjVGjyfPy5o2oNd2FkiaAC', 'owner'),
+('Владелец Дмитрий', 'owner3@smartbooking.com', '$2a$10$XVkjArT5QKlksmLDAnahNeRspvJ1lTwMjVGjyfPy5o2oNd2FkiaAC', 'owner')
 ON CONFLICT (email) DO NOTHING;
 
 -- Assign owners to existing resources

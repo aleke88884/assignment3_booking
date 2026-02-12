@@ -1,26 +1,27 @@
+-- Password for all test users: password123
 INSERT INTO users (name, email, password, role)
 VALUES (
         'Admin User',
         'admin@smartbooking.com',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '$2a$10$XVkjArT5QKlksmLDAnahNeRspvJ1lTwMjVGjyfPy5o2oNd2FkiaAC',
         'admin'
     ),
     (
         'John Doe',
         'john@example.com',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '$2a$10$XVkjArT5QKlksmLDAnahNeRspvJ1lTwMjVGjyfPy5o2oNd2FkiaAC',
         'user'
     ),
     (
         'Jane Smith',
         'jane@example.com',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '$2a$10$XVkjArT5QKlksmLDAnahNeRspvJ1lTwMjVGjyfPy5o2oNd2FkiaAC',
         'user'
     ),
     (
         'Bob Wilson',
         'bob@example.com',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '$2a$10$XVkjArT5QKlksmLDAnahNeRspvJ1lTwMjVGjyfPy5o2oNd2FkiaAC',
         'user'
     ) ON CONFLICT (email) DO NOTHING;
 INSERT INTO resources (name, description, capacity)
