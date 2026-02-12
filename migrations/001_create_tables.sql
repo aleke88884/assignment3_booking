@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255) NOT NULL CHECK (LENGTH(TRIM(name)) > 0),
     email VARCHAR(255) UNIQUE NOT NULL CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$'),
     password VARCHAR(255) NOT NULL CHECK (LENGTH(password) >= 6),
-    role VARCHAR(50) NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    role VARCHAR(50) NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'owner')),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -35,7 +35,7 @@ CREATE TRIGGER set_timestamp_users
     EXECUTE FUNCTION trigger_set_timestamp();
 
 COMMENT ON TABLE users IS 'Пользователи системы';
-COMMENT ON COLUMN users.role IS 'Роль: user или admin';
+COMMENT ON COLUMN users.role IS 'Роль: user, owner или admin';
 
 -- Таблица ресурсов (комнаты, оборудование и тд)
 CREATE TABLE IF NOT EXISTS resources (

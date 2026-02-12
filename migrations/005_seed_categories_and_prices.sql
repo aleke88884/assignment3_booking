@@ -108,8 +108,8 @@ BEGIN
             (resource_rec.id, 3, '09:00', '23:00', false),
             (resource_rec.id, 4, '09:00', '23:00', false),
             (resource_rec.id, 5, '09:00', '23:00', false),
-            (resource_rec.id, 6, '10:00', '02:00', false),
-            (resource_rec.id, 0, '10:00', '02:00', false)
+            (resource_rec.id, 6, '10:00', '23:59', false),
+            (resource_rec.id, 0, '10:00', '23:59', false)
         ON CONFLICT (resource_id, day_of_week) DO NOTHING;
     END LOOP;
 END $$;
@@ -128,22 +128,22 @@ BEGIN
     LOOP
         -- Тариф для будних дней
         INSERT INTO resource_pricing (resource_id, name, price, duration_minutes, day_of_week, time_from, time_to, is_active)
-        SELECT resource_rec.id, 'Будний день', resource_rec.price_per_hour, 60, day, '09:00', '18:00', true
+        SELECT resource_rec.id, 'Будний день', resource_rec.price_per_hour, 60, day, '09:00'::time, '18:00'::time, true
         FROM generate_series(1, 5) AS day
         ON CONFLICT DO NOTHING;
 
         -- Тариф для вечера будних дней (дороже)
         INSERT INTO resource_pricing (resource_id, name, price, duration_minutes, day_of_week, time_from, time_to, is_active)
-        SELECT resource_rec.id, 'Вечер будни', resource_rec.price_per_hour * 1.3, 60, day, '18:00', '23:00', true
+        SELECT resource_rec.id, 'Вечер будни', resource_rec.price_per_hour * 1.3, 60, day, '18:00'::time, '23:00'::time, true
         FROM generate_series(1, 5) AS day
         ON CONFLICT DO NOTHING;
 
         -- Тариф для выходных (дороже)
         INSERT INTO resource_pricing (resource_id, name, price, duration_minutes, day_of_week, time_from, time_to, is_active)
-        SELECT resource_rec.id, 'Выходной', resource_rec.price_per_hour * 1.5, 60, day, '10:00', '02:00', true
+        SELECT resource_rec.id, 'Выходной', resource_rec.price_per_hour * 1.5, 60, day, '10:00'::time, '23:59'::time, true
         FROM generate_series(0, 0) AS day
         UNION ALL
-        SELECT resource_rec.id, 'Выходной', resource_rec.price_per_hour * 1.5, 60, day, '10:00', '02:00', true
+        SELECT resource_rec.id, 'Выходной', resource_rec.price_per_hour * 1.5, 60, day, '10:00'::time, '23:59'::time, true
         FROM generate_series(6, 6) AS day
         ON CONFLICT DO NOTHING;
     END LOOP;

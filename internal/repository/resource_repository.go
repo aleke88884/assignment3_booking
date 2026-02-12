@@ -195,5 +195,80 @@ func (r *resourceRepository) List(ctx context.Context) ([]*models.Resource, erro
 		return nil, err
 	}
 
+	// Load photos for all resources
+	if len(resources) > 0 {
+		err = r.loadPhotosForResources(ctx, resources)
+		if err != nil {
+			// Don't fail if photos can't be loaded, just log
+			// return nil, err
+		}
+	}
+
 	return resources, nil
+}
+
+func (r *resourceRepository) loadPhotosForResources(ctx context.Context, resources []*models.Resource) error {
+	if len(resources) == 0 {
+		return nil
+	}
+
+	// Get all resource IDs
+	resourceIDs := make([]interface{}, len(resources))
+	resourceMap := make(map[int64]*models.Resource)
+	for i, res := range resources {
+		resourceIDs[i] = res.ID
+		resourceMap[res.ID] = res
+		res.Photos = make([]models.ResourcePhoto, 0)
+	}
+
+	// Build query with IN clause
+	query := `
+		SELECT id, resource_id, url, storage_key, file_name, file_size, mime_type,
+		       width, height, is_primary, display_order, created_at, updated_at
+		FROM resource_photos
+		WHERE resource_id = ANY($1)
+		ORDER BY resource_id, display_order, id
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, resourceIDs)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		photo := models.ResourcePhoto{}
+		var width, height sql.NullInt64
+		err := rows.Scan(
+			&photo.ID,
+			&photo.ResourceID,
+			&photo.URL,
+			&photo.StorageKey,
+			&photo.FileName,
+			&photo.FileSize,
+			&photo.MimeType,
+			&width,
+			&height,
+			&photo.IsPrimary,
+			&photo.DisplayOrder,
+			&photo.CreatedAt,
+			&photo.UpdatedAt,
+		)
+		if err != nil {
+			return err
+		}
+
+		if width.Valid {
+			photo.Width = int(width.Int64)
+		}
+		if height.Valid {
+			photo.Height = int(height.Int64)
+		}
+
+		if resource, ok := resourceMap[photo.ResourceID]; ok {
+			resource.Photos = append(resource.Photos, photo)
+		}
+	}
+
+	return rows.Err()
 }

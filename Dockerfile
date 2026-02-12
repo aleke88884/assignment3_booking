@@ -27,11 +27,14 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o smartbooking .
 # Этап 2: Финальный образ
 FROM alpine:latest
 
-# Устанавливаем CA сертификаты для HTTPS запросов
-RUN apk --no-cache add ca-certificates
+# Устанавливаем CA сертификаты и wget для healthcheck
+RUN apk --no-cache add ca-certificates wget
 
 # Создаем рабочую директорию
 WORKDIR /root/
+
+# Создаем директорию для uploads
+RUN mkdir -p /uploads
 
 # Копируем скомпилированное приложение из builder
 COPY --from=builder /app/smartbooking .

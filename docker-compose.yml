@@ -1,48 +1,27 @@
 services:
+  # PostgreSQL database
   postgres:
     image: postgres:16-alpine
     container_name: smartbooking_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-smartbooking}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: smartbooking
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}" ]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
       retries: 5
     networks:
       - smartbooking_network
 
-  # MinIO для хранения фотографий (S3-совместимое хранилище)
-  minio:
-    image: minio/minio:latest
-    container_name: smartbooking_minio
-    restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-minioadmin}
-    ports:
-      - "${MINIO_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - smartbooking_network
-
-  # Go приложение
+  # Go backend application
   app:
     build:
       context: .
@@ -54,67 +33,44 @@ services:
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-smartbooking}
-      SERVER_HOST: ${SERVER_HOST:-0.0.0.0}
-      SERVER_PORT: ${SERVER_PORT:-8080}
-      STORAGE_TYPE: ${STORAGE_TYPE:-minio}
-      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-http://minio:9000}
-      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-minioadmin}
-      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-minioadmin}
-      STORAGE_BUCKET: ${STORAGE_BUCKET:-smartbooking}
-      STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
-      STORAGE_USE_SSL: ${STORAGE_USE_SSL:-false}
-      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL:-http://localhost:9000}
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: smartbooking
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      STORAGE_TYPE: local
+    volumes:
+      - ./uploads:/uploads
     depends_on:
       postgres:
         condition: service_healthy
-      minio:
-        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
     networks:
       - smartbooking_network
 
-  # Nginx для фронтенда
+  # Nginx for frontend
   nginx:
     image: nginx:alpine
     container_name: smartbooking_nginx
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "3000:80"
     volumes:
-      - ./frontend:/usr/share/nginx/html
+      - ./frontend:/usr/share/nginx/html:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - app
-    networks:
-      - smartbooking_network
-
-  # pgAdmin для администрирования базы данных
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: smartbooking_pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@smartbooking.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
-    ports:
-      - "${PGADMIN_PORT:-5050}:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      - postgres
+      app:
+        condition: service_healthy
     networks:
       - smartbooking_network
 
 volumes:
   postgres_data:
-    driver: local
-  minio_data:
-    driver: local
-  pgadmin_data:
     driver: local
 
 networks:

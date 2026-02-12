@@ -1,4 +1,4 @@
-const API_URL = window.location.port === '80' || window.location.port === ''
+const API_URL = (window.location.port === '80' || window.location.port === '3000' || window.location.port === '')
     ? '/api'
     : 'http://localhost:8080/api';
 
@@ -286,16 +286,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const profileLink = document.getElementById('profile-link');
     const logoutLink = document.getElementById('logout-link');
     const bookingsLink = document.getElementById('bookings-link');
+    const ownerLink = document.getElementById('owner-link');
+    const adminLink = document.getElementById('admin-link');
 
     if (user && authLink && profileLink && logoutLink) {
         authLink.style.display = 'none';
         profileLink.style.display = 'block';
         logoutLink.style.display = 'block';
         if (bookingsLink) bookingsLink.style.display = 'block';
-        
+
+        // Show owner dashboard link if user is owner
+        if (ownerLink && user.role === 'owner') {
+            ownerLink.style.display = 'block';
+        }
+
+        // Show admin panel link if user is admin
+        if (adminLink && user.role === 'admin') {
+            adminLink.style.display = 'block';
+        }
+
         const userName = document.getElementById('user-name');
         if (userName) userName.textContent = user.name;
-        
+
         logoutLink.addEventListener('click', function(e) {
             e.preventDefault();
             logout();

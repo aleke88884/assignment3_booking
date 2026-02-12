@@ -1,14 +1,94 @@
 // Admin Panel JavaScript
 
-const API_BASE_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:8080/api'
-    : '/api';
+const API_BASE_URL = (window.location.port === '80' || window.location.port === '3000' || window.location.port === '')
+    ? '/api'
+    : 'http://localhost:8080/api';
 
 let allBookings = [];
 let allResources = [];
 let allUsers = [];
 let allCategories = [];
+document.addEventListener('DOMContentLoaded', function () {
+    initCharts();
+});
 
+function initCharts() {
+    // 1. Line Chart - Bookings over time
+    const lineCtx = document.getElementById('lineChart').getContext('2d');
+    new Chart(lineCtx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Bookings',
+                data: [12, 19, 15, 25, 32, 45, 40],
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#667eea',
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { display: false } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // 2. Doughnut Chart - Category distribution
+    const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+    new Chart(doughnutCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Offices', 'Venues', 'Equipment', 'Cars'],
+            datasets: [{
+                data: [40, 25, 20, 15],
+                backgroundColor: [
+                    '#667eea',
+                    '#48bb78',
+                    '#ed8936',
+                    '#4299e1'
+                ],
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { usePointStyle: true, padding: 20 }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+}
+
+// Simple Tab Switcher
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    document.getElementById(tabName + '-tab').classList.add('active');
+    event.currentTarget.classList.add('active');
+}
 // Check if user is admin
 function checkAdminAuth() {
     const user = localStorage.getItem('user');

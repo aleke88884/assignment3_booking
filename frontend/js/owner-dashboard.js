@@ -1,8 +1,8 @@
 // Owner Dashboard JavaScript
 
-const API_BASE_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:8080/api'
-    : '/api';
+const API_BASE_URL = (window.location.port === '80' || window.location.port === '3000' || window.location.port === '')
+    ? '/api'
+    : 'http://localhost:8080/api';
 
 // Check if user is logged in
 function checkAuth() {
